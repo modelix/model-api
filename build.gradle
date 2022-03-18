@@ -1,3 +1,4 @@
+import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
     id 'maven-publish'
@@ -13,7 +14,35 @@ configurations {
 }
 
 group 'org.modelix'
-version "$rootProject.version"
+
+def versionMajor = 2021
+def versionMinor = 3
+
+def suffix = {
+    def buildNumberStr = System.getenv("BUILD_NUMBER")
+    if (!buildNumberStr) {
+        return "-SNAPSHOT"
+    } else {
+        def gitCommitHash = getCommandOutput("git rev-parse --short=7 HEAD")
+        return ".$buildNumberStr.$gitCommitHash"
+    }
+}()
+
+version "$versionMajor.$versionMinor$suffix"
+
+private static String getCommandOutput(String command) {
+    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        command = 'cmd /c ' + command
+    }
+    return command.execute().in.text.trim()
+}
+
+task printVersion {
+    doLast {
+        println "Version: ${project.version}"
+    }
+}
+
 
 repositories {
     maven { url "https://repo.maven.apache.org/maven2" }
@@ -116,26 +145,9 @@ spotless {
     }
 }
 
-task copyJarsToMps(type: Sync) {
-    from configurations.jvmDefault
-    from "$buildDir/libs"
-    into "$projectDir/../code/model-api/org.modelix.model.api/lib"
-    rename { fileName ->
-        stripVersion(fileName)
-    }
-    exclude 'log4j*.jar'
-    exclude 'annotations*.jar'
-}
-
-assemble.finalizedBy(copyJarsToMps)
-
-String stripVersion(String fileNameWithVersion) {
-	String name = fileNameWithVersion
-	if (version != null && version.length() > 0) name = name.replace("-" + version, "")
-	name = name.replaceAll(/-\d+(\.\d+)*(-SNAPSHOT)?/, "")
-	println "stripVersion($fileNameWithVersion) -> $name"
-    return name
-}
+ext.releaseRepository = 'https://projects.itemis.de/nexus/content/repositories/mbeddr'
+ext.snapshotRepository = 'https://projects.itemis.de/nexus/content/repositories/mbeddr_snapshots'
+ext.publishingRepository = version.toString().endsWith("-SNAPSHOT") ? snapshotRepository : releaseRepository
 
 publishing {
     repositories {
@@ -150,7 +162,7 @@ publishing {
         }
         maven {
             name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/JetBrains/MPS-extensions"
+            url = "https://maven.pkg.github.com/modelix/model-api"
             if (rootProject.hasProperty("gpr.token")) {
                 credentials {
                     username = rootProject.findProperty("gpr.user")
