@@ -18,6 +18,10 @@ group 'org.modelix'
 def versionMajor = 2021
 def versionMinor = 3
 
+// Compute version number suffix:
+// - if BUILD_NUMBER env var is set (by TeamCity), use `.<build-number>.<git-hash>` where git hash is abbreviated
+//   to 7 chars.
+// - otherwise use -SNAPSHOT
 def suffix = {
     def buildNumberStr = System.getenv("BUILD_NUMBER")
     if (!buildNumberStr) {
