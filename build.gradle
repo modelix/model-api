@@ -41,9 +41,9 @@ private static String getCommandOutput(String command) {
     return command.execute().in.text.trim()
 }
 
-task printVersion {
+task setTeamCityBuildNumber {
     doLast {
-        println "Version: ${project.version}"
+        println("##teamcity[buildNumber '$version']")
     }
 }
 
