@@ -51,7 +51,7 @@ task setTeamCityBuildNumber {
 repositories {
     maven { url "https://repo.maven.apache.org/maven2" }
     mavenCentral()
-    maven { url 'https://projects.itemis.de/nexus/content/groups/OS/' }                
+    maven { url 'https://projects.itemis.de/nexus/content/groups/OS/' }
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
@@ -148,28 +148,28 @@ spotless {
     }
 }
 
-ext.releaseRepository = 'https://projects.itemis.de/nexus/content/repositories/mbeddr'
-ext.snapshotRepository = 'https://projects.itemis.de/nexus/content/repositories/mbeddr_snapshots'
+ext.releaseRepository = 'https://artifacts.itemis.cloud/repository/maven-mps-releases'
+ext.snapshotRepository = 'https://artifacts.itemis.cloud/repository/maven-mps-snapshots'
 ext.publishingRepository = version.toString().endsWith("-SNAPSHOT") ? snapshotRepository : releaseRepository
 
 publishing {
     repositories {
         maven {
-            url rootProject.publishingRepository
-            if (rootProject.hasProperty('nexusUsername')) {
+            url publishingRepository
+            if (project.hasProperty('artifacts.itemis.cloud.user')) {
                 credentials {
-                    username rootProject.nexusUsername
-                    password rootProject.nexusPassword
+                    username project.findProperty('artifacts.itemis.cloud.user')
+                    password project.findProperty('artifacts.itemis.cloud.pw')
                 }
             }
         }
         maven {
             name = "GitHubPackages"
             url = "https://maven.pkg.github.com/modelix/model-api"
-            if (rootProject.hasProperty("gpr.token")) {
+            if (project.hasProperty("gpr.token")) {
                 credentials {
-                    username = rootProject.findProperty("gpr.user")
-                    password = rootProject.findProperty("gpr.token")
+                    username = project.findProperty("gpr.user")
+                    password = project.findProperty("gpr.token")
                 }
             }
         }
