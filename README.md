@@ -25,10 +25,8 @@ by itemis, and to [GitHub Packages](https://github.com/modelix/model-api/package
 
 # For Developers: Versioning and Publishing.
 
-The project is built automatically
-on [itemis TeamCity](https://build.mbeddr.com/buildConfiguration/modelix_ModelApi_Build?mode=builds).
+The project is built automatically via [GitHub Actions](https://github.com/modelix/model-api/actions).
 
-All branches are built but only `main` is published to the repositories.
+All branches are built but only tags are published to the repositories.
 
-The version number is composed of the major and minor components, defined in the build script, the short Git commit 
-hash, and the build number from TeamCity. Non-TeamCity builds get `-SNAPSHOT` suffix instead of the last two components.
+The version number is taken from the tag, in a fashion similar to `git describe`. Non-CI builds get `-SNAPSHOT` suffix.

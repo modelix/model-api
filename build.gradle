@@ -7,6 +7,7 @@ plugins {
     id 'org.jlleitschuh.gradle.ktlint' version '9.3.0'
     id 'java-library'
     id 'jacoco'
+    id 'com.palantir.git-version' version '0.13.0'
 }
 
 configurations {
@@ -14,44 +15,22 @@ configurations {
 }
 
 group 'org.modelix'
+description = "API to access models stored in Modelix"
 
-def versionMajor = 2021
-def versionMinor = 3
+version = computeVersion()
+println("Version: $version")
 
-// Compute version number suffix:
-// - if BUILD_NUMBER env var is set (by TeamCity), use `.<build-number>.<git-hash>` where git hash is abbreviated
-//   to 7 chars.
-// - otherwise use -SNAPSHOT
-def suffix = {
-    def buildNumberStr = System.getenv("BUILD_NUMBER")
-    if (!buildNumberStr) {
-        return "-SNAPSHOT"
-    } else {
-        def gitCommitHash = getCommandOutput("git rev-parse --short=7 HEAD")
-        return ".$buildNumberStr.$gitCommitHash"
+def computeVersion() {
+    def versionFile = file("version.txt")
+    def version = versionFile.exists() ? versionFile.text.trim() : gitVersion()
+    if (!"true".equals(project.findProperty("ciBuild"))) {
+        version = "$version-SNAPSHOT"
     }
-}()
-
-version "$versionMajor.$versionMinor$suffix"
-
-private static String getCommandOutput(String command) {
-    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-        command = 'cmd /c ' + command
-    }
-    return command.execute().in.text.trim()
+    return version
 }
-
-task setTeamCityBuildNumber {
-    doLast {
-        println("##teamcity[buildNumber '$version']")
-    }
-}
-
 
 repositories {
-    maven { url "https://repo.maven.apache.org/maven2" }
     mavenCentral()
-    maven { url 'https://projects.itemis.de/nexus/content/groups/OS/' }
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
@@ -152,6 +131,18 @@ ext.releaseRepository = 'https://artifacts.itemis.cloud/repository/maven-mps-rel
 ext.snapshotRepository = 'https://artifacts.itemis.cloud/repository/maven-mps-snapshots'
 ext.publishingRepository = version.toString().endsWith("-SNAPSHOT") ? snapshotRepository : releaseRepository
 
+def getGithubCredentials() {
+    if (project.hasProperty("gpr.user") && project.hasProperty("gpr.key")) {
+        return [project.findProperty("gpr.user"), project.findProperty("gpr.key")]
+    }
+
+    if (System.getenv("GITHUB_ACTOR") != null && System.getenv("GITHUB_TOKEN") != null) {
+        return [System.getenv("GITHUB_ACTOR"), System.getenv("GITHUB_TOKEN")]
+    }
+
+    return null
+}
+
 publishing {
     repositories {
         maven {
@@ -163,13 +154,14 @@ publishing {
                 }
             }
         }
-        maven {
-            name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/modelix/model-api"
-            if (project.hasProperty("gpr.token")) {
+        def githubCredentials = getGithubCredentials()
+        if (githubCredentials != null) {
+            maven {
+                name = "GitHubPackages"
+                url = "https://maven.pkg.github.com/modelix/model-api"
                 credentials {
-                    username = project.findProperty("gpr.user")
-                    password = project.findProperty("gpr.token")
+                    username = githubCredentials[0]
+                    password = githubCredentials[1]
                 }
             }
         }
