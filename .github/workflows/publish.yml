@@ -20,8 +20,8 @@ jobs:
     - name: Build and Publish
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: >-
-        ./gradlew build publish
-          -PciBuild=true
-          -Partifacts.itemis.cloud.user=${{secrets.ARTIFACTS_ITEMIS_CLOUD_USER}}
+      run: |
+        ./gradlew build publish \
+          -PciBuild=true \
+          -Partifacts.itemis.cloud.user=${{secrets.ARTIFACTS_ITEMIS_CLOUD_USER}} \
           -Partifacts.itemis.cloud.pw=${{secrets.ARTIFACTS_ITEMIS_CLOUD_PW}}
