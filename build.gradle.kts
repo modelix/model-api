@@ -93,10 +93,6 @@ kotlin {
     }
 }
 
-val releaseRepository = "https://artifacts.itemis.cloud/repository/maven-mps-releases"
-val snapshotRepository = "https://artifacts.itemis.cloud/repository/maven-mps-snapshots"
-val publishingRepository = if (version.toString().endsWith("-SNAPSHOT")) snapshotRepository else releaseRepository
-
 fun getGithubCredentials(): Pair<String, String>? {
     if (project.hasProperty("gpr.user") && project.hasProperty("gpr.key")) {
         return (project.findProperty("gpr.user")?.toString() ?: "") to (project.findProperty("gpr.key")?.toString() ?: "")
@@ -111,12 +107,16 @@ fun getGithubCredentials(): Pair<String, String>? {
 
 publishing {
     repositories {
-        maven {
-            url = uri(publishingRepository)
-            if (project.hasProperty("artifacts.itemis.cloud.user")) {
+        if (project.hasProperty("artifacts.itemis.cloud.user")) {
+            maven {
+                name = "itemisNexus3"
+                url = if (version.toString().contains("SNAPSHOT"))
+                    uri("https://artifacts.itemis.cloud/repository/maven-mps-snapshots/")
+                else
+                    uri("https://artifacts.itemis.cloud/repository/maven-mps-releases/")
                 credentials {
-                    username = project.findProperty("artifacts.itemis.cloud.user")?.toString()
-                    password = project.findProperty("artifacts.itemis.cloud.pw")?.toString()
+                    username = project.findProperty("artifacts.itemis.cloud.user").toString()
+                    password = project.findProperty("artifacts.itemis.cloud.pw").toString()
                 }
             }
         }
