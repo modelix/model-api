@@ -17,13 +17,13 @@ actual class ContextValue<E> {
     private var defaultValue: E? = null
     private val value = ThreadLocal<MutableList<E>>()
 
-    actual constructor() {}
+    actual constructor()
     actual constructor(defaultValue: E) {
         this.defaultValue = defaultValue
     }
 
     private val stack: MutableList<E>
-        private get() {
+        get() {
             var stack = value.get()
             if (stack == null) {
                 stack = ArrayList()

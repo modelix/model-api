@@ -1,7 +1,7 @@
 
 plugins {
     id("maven-publish")
-    id("org.jetbrains.kotlin.multiplatform") version "1.4.31"
+    id("org.jetbrains.kotlin.multiplatform") version "1.6.21"
     id("org.jlleitschuh.gradle.ktlint") version "9.3.0"
     id("com.palantir.git-version") version "0.13.0"
 }
@@ -60,6 +60,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-common"))
+                implementation("io.github.microutils:kotlin-logging:2.1.21")
             }
         }
         val commonTest by getting {
@@ -71,7 +72,6 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-jdk8"))
-                implementation("log4j:log4j:1.2.17")
             }
         }
         val jvmTest by getting {

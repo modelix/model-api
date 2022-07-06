@@ -18,9 +18,10 @@ package org.modelix.model.api
 import kotlin.jvm.Volatile
 
 class PBranch constructor(@field:Volatile private var tree: ITree, private val idGenerator: IIdGenerator) : IBranch {
+    private val logger = mu.KotlinLogging.logger {}
     private val writeLock = Any()
     private val contextTransactions = ContextValue<Transaction?>()
-    private var listeners = arrayOf<IBranchListener>()
+    private var listeners: Set<IBranchListener> = emptySet()
     private val branchId: String = tree.getId() ?: idGenerator.generate().toString()
 
     override fun getId(): String {
@@ -103,11 +104,11 @@ class PBranch constructor(@field:Volatile private var tree: ITree, private val i
         }
 
     override fun addListener(l: IBranchListener) {
-        listeners = COWArrays.addIfAbsent(listeners, l)
+        listeners = listeners + l
     }
 
     override fun removeListener(l: IBranchListener) {
-        listeners = COWArrays.remove(listeners, l)
+        listeners = listeners - l
     }
 
     protected fun notifyTreeChange(oldTree: ITree, newTree: ITree) {
@@ -118,7 +119,7 @@ class PBranch constructor(@field:Volatile private var tree: ITree, private val i
             try {
                 l.treeChanged(oldTree, newTree)
             } catch (ex: Exception) {
-                logError("Exception in branch listener", ex, PBranch::class)
+                logger.error(ex) { "Exception in branch listener" }
             }
         }
     }

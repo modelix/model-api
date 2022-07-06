@@ -34,11 +34,10 @@ open class PNodeAdapter(val nodeId: Long, val branch: IBranch) : INode {
         if (node !is PNodeAdapter) {
             throw RuntimeException("Not a " + PNodeAdapter::class.simpleName + ": " + node)
         }
-        val adapter = node
-        if (adapter.branch != branch) {
-            throw RuntimeException("Node belongs to a different branch. Expected $branch but was ${adapter.branch}")
+        if (node.branch != branch) {
+            throw RuntimeException("Node belongs to a different branch. Expected $branch but was ${node.branch}")
         }
-        return adapter.nodeId
+        return node.nodeId
     }
 
     protected fun notifyAccess() {
@@ -178,7 +177,7 @@ open class PNodeAdapter(val nodeId: Long, val branch: IBranch) : INode {
         var concept: IConcept? = null
         try {
             concept = branch.computeRead { branch.transaction.getConcept(nodeId) }
-        } catch (ex: Exception) {
+        } catch (_: Exception) {
         }
         var str = "PNode${nodeId.toString(16)}"
         if (concept != null) {

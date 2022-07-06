@@ -19,7 +19,7 @@ class CompositeArea : IArea {
     private val areas: List<IArea>
     private val rootNode = Root()
 
-    constructor(vararg areas: IArea) : this(areas.asList()) {}
+    constructor(vararg areas: IArea) : this(areas.asList())
 
     constructor(areas: List<IArea>) {
         this.areas = ArrayList(areas)
@@ -127,7 +127,7 @@ class CompositeArea : IArea {
 
     data class AreaReference(val areaRefs: List<IAreaReference>) : IAreaReference
 
-    inner class Root() : INode {
+    inner class Root : INode {
         override fun getArea() = this@CompositeArea
 
         override val isValid: Boolean
@@ -226,7 +226,7 @@ class CompositeArea : IArea {
         override fun getConceptReference(): IConceptReference? = node.getConceptReference()
         override val roleInParent: String?
             get() = node.roleInParent
-        override val parent: INode?
+        override val parent: INode
             get() = wrapNode(node.parent) ?: rootNode
         override val allChildren: Iterable<INode>
             get() = node.allChildren.map { NodeWrapper(it) }
