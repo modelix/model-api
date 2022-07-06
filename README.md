@@ -9,10 +9,7 @@ multiple versions of MPS.
 # Versioning
 
 Model API was extracted from MPS-extensions master as of 2022-03-17. The minor version at that point was 2021.2.
-The releases of the extracted project will begin with version 2022.0 and will follow semantic versioning.
-
-**Model API is versioned independently of MPS versions, its version number is similar to MPS version numbers for
-historical reasons only and does NOT reflect compatibility with a particular version of MPS.**
+The releases of the extracted project will begin with version 1.0 and will follow semantic versioning.
 
 Semantic versioning is considered from the point of view of _API consumers_, not _API implementors_. Adding a new method
 to the API is a minor change because it is backwards compatible from the point of view of API consumers, even though it
