@@ -2,8 +2,8 @@
 plugins {
     id("maven-publish")
     id("org.jetbrains.kotlin.multiplatform") version "1.6.21"
-    id("org.jlleitschuh.gradle.ktlint") version "9.3.0"
-    id("com.palantir.git-version") version "0.13.0"
+    id("org.jlleitschuh.gradle.ktlint") version "10.3.0"
+    id("com.palantir.git-version") version "0.15.0"
 }
 
 configurations {
@@ -38,6 +38,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
 
 ktlint {
     disabledRules.add("no-wildcard-imports")
+    outputToConsole.set(true)
 }
 
 tasks.named("check") {
@@ -47,7 +48,6 @@ tasks.named("check") {
 kotlin {
     jvm()
     js(BOTH) {
-        //browser {}
         nodejs {
             testTask {
                 useMocha {
