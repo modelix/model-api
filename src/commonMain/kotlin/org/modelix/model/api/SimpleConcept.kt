@@ -17,7 +17,7 @@ package org.modelix.model.api
 
 class SimpleConcept(
     private val conceptName: String,
-    private val isAbstract: Boolean,
+    private val is_abstract: Boolean,
     directSuperConcepts: Iterable<IConcept>
 ) : IConcept {
     override var language: ILanguage? = null
@@ -32,7 +32,7 @@ class SimpleConcept(
 
     constructor(name: String, directSuperConcepts: Iterable<IConcept>) : this(name, false, directSuperConcepts)
 
-    override fun isAbstract(): Boolean = this.isAbstract
+    override fun isAbstract(): Boolean = this.is_abstract
 
     override fun getUID(): String = getLongName()
 
