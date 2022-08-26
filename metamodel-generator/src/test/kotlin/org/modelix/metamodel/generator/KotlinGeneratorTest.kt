@@ -3,7 +3,6 @@ package org.modelix.metamodel.generator
 import com.charleskorn.kaml.Yaml
 import kotlinx.serialization.decodeFromString
 import org.junit.Test
-import org.modelix.metamodel.definition.Language
 import java.io.File
 
 class KotlinGeneratorTest {
@@ -39,7 +38,7 @@ class KotlinGeneratorTest {
         val language = Yaml.default.decodeFromString<Language>(input)
         //val outputDir = File(".").toPath().resolve("build").resolve("test-generator-output")
         val outputDir = File("build/test-generator-output").toPath()
-        KotlinGenerator(outputDir).generate(listOf(language))
+        MetaModelGenerator(outputDir).generate(listOf(language))
     }
 
 }

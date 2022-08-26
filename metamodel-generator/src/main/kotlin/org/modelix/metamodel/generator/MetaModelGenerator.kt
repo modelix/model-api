@@ -6,14 +6,12 @@ import org.modelix.metamodel.GeneratedConceptInstance
 import org.modelix.metamodel.GeneratedConcept
 import org.modelix.metamodel.GeneratedLanguage
 import org.modelix.metamodel.NodeChildren
-import org.modelix.metamodel.definition.Concept
-import org.modelix.metamodel.definition.Language
 import org.modelix.model.api.*
 import java.nio.file.Path
 import kotlin.reflect.KClass
 
 
-class KotlinGenerator(val outputDir: Path) {
+class MetaModelGenerator(val outputDir: Path) {
 
     private fun FileSpec.write() {
         writeTo(outputDir)

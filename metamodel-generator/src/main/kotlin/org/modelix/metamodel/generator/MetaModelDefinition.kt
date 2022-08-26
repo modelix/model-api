@@ -1,4 +1,4 @@
-package org.modelix.metamodel.definition
+package org.modelix.metamodel.generator
 
 import com.charleskorn.kaml.Yaml
 import kotlinx.serialization.Serializable
