@@ -1,1 +1,5 @@
-rootProject.name = "model-api"
+rootProject.name = "model-api-root"
+
+include 'model-api'
+include 'metamodel-runtime'
+include 'metamodel-generator'
