@@ -34,7 +34,7 @@ class MetaModelGenerator(val outputDir: Path) {
             val builder = FileSpec.builder(language.generatedClassName().packageName, language.generatedClassName().simpleName)
             val file = builder.addType(generateLanguage(language)).build()
             for (concept in language.concepts) {
-                generateConceptInstanceClass(language, concept)
+                generateConceptFile(language, concept)
             }
             file.write()
         }
@@ -50,9 +50,18 @@ class MetaModelGenerator(val outputDir: Path) {
         builder.superclass(GeneratedLanguage::class)
         builder.addSuperclassConstructorParameter("\"${language.name}\"")
         for (concept in language.concepts) {
-            builder.addType(generateConceptObject(language, concept))
+            builder.addProperty(PropertySpec.builder(concept.name, ClassName(language.name, concept.name))
+                .initializer(language.name + "." + concept.name)
+                .build())
         }
         return builder.build()
+    }
+
+    private fun generateConceptFile(language: Language, concept: Concept) {
+        FileSpec.builder(language.name, concept.name)
+            .addType(generateConceptObject(language, concept))
+            .addType(generateConceptInstanceClass(language, concept))
+            .build().write()
     }
 
     private fun generateConceptObject(language: Language, concept: Concept): TypeSpec {
@@ -94,11 +103,10 @@ class MetaModelGenerator(val outputDir: Path) {
         }.build()
     }
 
-    private fun generateConceptInstanceClass(language: Language, concept: Concept) {
-        val fileBuilder = FileSpec.builder(language.name, concept.name + "Instance")
-        val cls = TypeSpec.classBuilder(ClassName(language.name, concept.name + "Instance")).apply {
-            addProperty(PropertySpec.builder("concept", language.generatedClassName().nestedClass(concept.name), KModifier.OVERRIDE)
-                .initializer(language.generatedClassName().nestedClass(concept.name).canonicalName)
+    private fun generateConceptInstanceClass(language: Language, concept: Concept): TypeSpec {
+        return TypeSpec.classBuilder(ClassName(language.name, concept.name + "Instance")).apply {
+            addProperty(PropertySpec.builder("concept", ClassName(language.name, concept.name), KModifier.OVERRIDE)
+                .initializer(concept.name)
                 .build())
             primaryConstructor(FunSpec.constructorBuilder().addParameter("node", INode::class).build())
             superclass(GeneratedConceptInstance::class)
@@ -128,8 +136,6 @@ class MetaModelGenerator(val outputDir: Path) {
                     .build())
             }
         }.build()
-        fileBuilder.addType(cls)
-        fileBuilder.build().write()
     }
 
     private fun Language.generatedClassName()  = ClassName(name, "L_" + name.replace(".", "_"))
