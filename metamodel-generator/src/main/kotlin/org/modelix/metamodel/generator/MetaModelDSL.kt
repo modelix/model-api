@@ -13,12 +13,12 @@ class LanguageBuilder(val name: String) {
         )
     }
 
-    fun concept(name: String, body: ConceptBuilder.()->Unit) {
-        concepts.add(ConceptBuilder(name).apply(body).build())
+    fun concept(name: String, body: ConceptBuilder.()->Unit = {}) {
+        concepts.add(ConceptBuilder(name, this).apply(body).build())
     }
 }
 
-class ConceptBuilder(val conceptName: String) {
+class ConceptBuilder(val conceptName: String, val languageBuilder: LanguageBuilder) {
     private var abstract: Boolean = false
     private val properties: MutableList<Property> = ArrayList()
     private val children: MutableList<Child> = ArrayList()
@@ -52,6 +52,13 @@ class ConceptBuilder(val conceptName: String) {
 
     fun extends(type: String) {
         extends.add(type)
+    }
+
+    fun concept(subConceptName: String, body: ConceptBuilder.()->Unit = {}) {
+        languageBuilder.concept(subConceptName) {
+            extends(conceptName)
+            body()
+        }
     }
 
     fun build(): Concept {
