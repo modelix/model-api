@@ -3,6 +3,7 @@ package org.modelix.metamodel.generator
 import com.charleskorn.kaml.Yaml
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 
@@ -11,6 +12,10 @@ data class Language(
     val name: String,
     val concepts: List<Concept>,
 ) {
+
+    fun toYaml(): String = Yaml.default.encodeToString(this)
+    fun toJson(): String = Json.encodeToString(this)
+
     companion object {
         fun fromFile(file: File): Language {
             return when (file.extension.lowercase()) {

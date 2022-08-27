@@ -55,8 +55,9 @@ class ConceptBuilder(val conceptName: String, val languageBuilder: LanguageBuild
     }
 
     fun concept(subConceptName: String, body: ConceptBuilder.()->Unit = {}) {
+        val parentBuilder = this
         languageBuilder.concept(subConceptName) {
-            extends(conceptName)
+            extends(parentBuilder.conceptName)
             body()
         }
     }

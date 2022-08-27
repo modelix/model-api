@@ -3,7 +3,7 @@ package org.modelix.metamodel
 import org.modelix.model.api.*
 import kotlin.reflect.KClass
 
-abstract class GeneratedConcept<InstanceT : GeneratedConceptInstance>(private val is_abstract: Boolean) : IConcept {
+abstract class GeneratedConcept<InstanceT : GeneratedConceptInstance, WrapperT : IConceptWrapper>(private val is_abstract: Boolean) : IConcept {
     abstract val instanceClass: KClass<InstanceT>
     private val propertiesMap: MutableMap<String, GeneratedProperty> = LinkedHashMap()
     private val childLinksMap: MutableMap<String, GeneratedChildLink> = LinkedHashMap()

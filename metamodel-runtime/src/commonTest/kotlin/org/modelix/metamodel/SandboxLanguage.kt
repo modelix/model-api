@@ -25,7 +25,7 @@ object SandboxLanguage : GeneratedLanguage("org.modelix.metamodel.sandboxlanguag
     class Concept1Instance(node: INode) : GeneratedConceptInstance(node) {
         override val concept = Concept1
         var property1A: String? by PropertyAccessor("property1A")
-        val childLink1A = NodeChildren(this, "childLink1A", Concept2, Concept2Instance::class)
+        val childLink1A = ChildrenAccessor(this, "childLink1A", Concept2, Concept2Instance::class)
         var reference1B: Concept2Instance? by ReferenceAccessor("reference1B", Concept2Instance::class)
         var reference1A: Concept2Instance?
             get() = node.getReferenceTarget("reference1A")?.let { LanguageRegistry.wrapNode(it) as Concept2Instance }
