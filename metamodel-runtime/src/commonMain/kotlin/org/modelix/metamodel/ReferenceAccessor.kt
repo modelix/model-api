@@ -5,7 +5,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.cast
 
-class ReferenceAccessor<SourceT, TargetT : GeneratedConceptInstance>(
+class ReferenceAccessor<SourceT, TargetT : ITypedNode>(
     val node: INode,
     val role: String,
     val targetType: KClass<TargetT>

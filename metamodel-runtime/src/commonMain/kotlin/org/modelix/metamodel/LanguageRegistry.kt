@@ -37,7 +37,7 @@ object LanguageRegistry {
         return concepts[uid]
     }
 
-    fun wrapNode(node: INode): GeneratedConceptInstance {
+    fun wrapNode(node: INode): TypedNodeImpl {
         val concept = (node.concept as? GeneratedConcept<*, *>)
             ?: throw IllegalArgumentException("Unknown concept: ${node.concept}")
         return concept.wrap(node)

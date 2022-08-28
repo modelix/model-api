@@ -1,10 +1,9 @@
 package org.modelix.metamodel
 
-import org.modelix.model.api.IConcept
 import org.modelix.model.api.INode
 
-abstract class GeneratedConceptInstance(val node: INode) {
-    abstract val concept: IConceptWrapper
+abstract class TypedNodeImpl(override val node: INode) : ITypedNode {
+    abstract val concept: ITypedConcept
 
     init {
         require(node.concept == concept) { "Concept of node $node expected to be $concept, but was ${node.concept}" }

@@ -59,8 +59,8 @@ class MetaModelGenerator(val outputDir: Path) {
             .addType(generateConceptObject(language, concept))
             .addType(generateConceptWrapperInterface(language, concept))
             .addType(generateConceptWrapperImpl(language, concept))
-            .addType(generateConceptInstanceInterface(language, concept))
-            .addType(generateConceptInstanceClass(language, concept))
+            .addType(generateNodeWrapperInterface(language, concept))
+            .addType(generateNodeWrapperImpl(language, concept))
             .addImport(PropertyAccessor::class.asClassName().packageName, PropertyAccessor::class.asClassName().simpleName)
             .addImport(ReferenceAccessor::class.asClassName().packageName, ReferenceAccessor::class.asClassName().simpleName)
             .build().write()
@@ -69,13 +69,13 @@ class MetaModelGenerator(val outputDir: Path) {
     private fun generateConceptObject(language: Language, concept: Concept): TypeSpec {
         return TypeSpec.objectBuilder(concept.conceptObjectName()).apply {
             superclass(GeneratedConcept::class.asTypeName().parameterizedBy(
-                ClassName(language.name, concept.instanceImplName()),
-                ClassName(language.name, concept.conceptInterfaceName())
+                ClassName(language.name, concept.nodeWrapperImplName()),
+                ClassName(language.name, concept.conceptWrapperImplName())
             ))
             addSuperclassConstructorParameter(concept.abstract.toString())
-            val instanceClassType = KClass::class.asClassName().parameterizedBy(ClassName(language.name, concept.instanceImplName()))
+            val instanceClassType = KClass::class.asClassName().parameterizedBy(ClassName(language.name, concept.nodeWrapperImplName()))
             addProperty(PropertySpec.builder("instanceClass", instanceClassType, KModifier.OVERRIDE)
-                .initializer(concept.instanceImplName() + "::class")
+                .initializer(concept.nodeWrapperImplName() + "::class")
                 .build())
             addProperty(PropertySpec.builder("language", ILanguage::class, KModifier.OVERRIDE)
                 .initializer(language.generatedClassName().simpleName)
@@ -83,7 +83,7 @@ class MetaModelGenerator(val outputDir: Path) {
             addFunction(FunSpec.builder("wrap")
                 .addModifiers(KModifier.OVERRIDE)
                 .addParameter("node", INode::class)
-                .addStatement("return ${concept.instanceImplName()}(node)")
+                .addStatement("return ${concept.nodeWrapperImplName()}(node)")
                 .build())
             addFunction(FunSpec.builder("getDirectSuperConcepts")
                 .addModifiers(KModifier.OVERRIDE)
@@ -97,7 +97,7 @@ class MetaModelGenerator(val outputDir: Path) {
             }
             for (link in concept.references) {
                 addProperty(PropertySpec.builder(link.name, IReferenceLink::class)
-                    .initializer("""newReferenceLink("${link.name}", ${link.optional}, ${link.type})""")
+                    .initializer("""newReferenceLink("${link.name}", ${link.optional}, ${link.type.conceptObjectName()})""")
                     .build())
             }
             for (link in concept.children) {
@@ -108,13 +108,12 @@ class MetaModelGenerator(val outputDir: Path) {
         }.build()
     }
 
-
     private fun generateConceptWrapperInterface(language: Language, concept: Concept): TypeSpec {
-        return TypeSpec.interfaceBuilder(ClassName(language.name, concept.conceptInterfaceName())).apply {
+        return TypeSpec.interfaceBuilder(ClassName(language.name, concept.conceptWrapperImplName())).apply {
             //addProperty(PropertySpec.builder("concept", ClassName(language.name, concept.conceptObjectName()), KModifier.OVERRIDE).build())
-            addSuperinterface(IConceptWrapper::class)
+            addSuperinterface(ITypedConcept::class)
             for (extended in concept.extends) {
-                addSuperinterface(ClassName(language.name, extended.conceptInterfaceName()))
+                addSuperinterface(ClassName(language.name, extended.conceptWrapperImplName()))
             }
             for (property in concept.properties) {
                 addProperty(PropertySpec.builder(property.name, IProperty::class).build())
@@ -129,17 +128,17 @@ class MetaModelGenerator(val outputDir: Path) {
     }
 
     private fun generateConceptWrapperImpl(language: Language, concept: Concept): TypeSpec {
-        val ownCN = ClassName(language.name, concept.conceptWrapperName())
+        val ownCN = ClassName(language.name, concept.conceptWrapperInterfaceName())
         return TypeSpec.classBuilder(ownCN).apply {
             addModifiers(KModifier.OPEN)
             if (concept.extends.isEmpty()) {
             } else {
-                superclass(ClassName(language.name, concept.extends.first().conceptWrapperName()))
+                superclass(ClassName(language.name, concept.extends.first().conceptWrapperInterfaceName()))
                 for (extended in concept.extends.drop(1)) {
-                    addSuperinterface(ClassName(language.name, extended.conceptInterfaceName()), CodeBlock.of(extended.conceptWrapperName() + ".INSTANCE"))
+                    addSuperinterface(ClassName(language.name, extended.conceptWrapperImplName()), CodeBlock.of(extended.conceptWrapperInterfaceName() + ".INSTANCE"))
                 }
             }
-            addSuperinterface(ClassName(language.name, concept.conceptInterfaceName()))
+            addSuperinterface(ClassName(language.name, concept.conceptWrapperImplName()))
 
             primaryConstructor(FunSpec.constructorBuilder().addModifiers(KModifier.PROTECTED).build())
 
@@ -173,25 +172,25 @@ class MetaModelGenerator(val outputDir: Path) {
         }.build()
     }
 
-    private fun generateConceptInstanceClass(language: Language, concept: Concept): TypeSpec {
-        return TypeSpec.classBuilder(ClassName(language.name, concept.instanceImplName())).apply {
+    private fun generateNodeWrapperImpl(language: Language, concept: Concept): TypeSpec {
+        return TypeSpec.classBuilder(ClassName(language.name, concept.nodeWrapperImplName())).apply {
             addModifiers(KModifier.OPEN)
-            val conceptType = ClassName(language.name, concept.conceptInterfaceName())
+            val conceptType = ClassName(language.name, concept.conceptWrapperImplName())
             addProperty(PropertySpec.builder("concept", conceptType, KModifier.OVERRIDE)
-                .initializer(concept.conceptWrapperName() + ".INSTANCE")
+                .initializer(concept.conceptWrapperInterfaceName() + ".INSTANCE")
                 .build())
             primaryConstructor(FunSpec.constructorBuilder().addParameter("node", INode::class).build())
             if (concept.extends.isEmpty()) {
-                superclass(GeneratedConceptInstance::class)
+                superclass(TypedNodeImpl::class)
                 addSuperclassConstructorParameter("node")
             } else {
-                superclass(ClassName(language.name, concept.extends.first().instanceImplName()))
+                superclass(ClassName(language.name, concept.extends.first().nodeWrapperImplName()))
                 addSuperclassConstructorParameter("node")
                 for (extended in concept.extends.drop(1)) {
-                    addSuperinterface(ClassName(language.name, extended.instanceInterfaceName()), CodeBlock.of(extended.instanceImplName() + "(node)"))
+                    addSuperinterface(ClassName(language.name, extended.nodeWrapperInterfaceName()), CodeBlock.of(extended.nodeWrapperImplName() + "(node)"))
                 }
             }
-            addSuperinterface(ClassName(language.name, concept.instanceInterfaceName()))
+            addSuperinterface(ClassName(language.name, concept.nodeWrapperInterfaceName()))
             for (property in concept.properties) {
                 val optionalString = String::class.asTypeName().copy(nullable = true)
                 addProperty(PropertySpec.builder(property.name, optionalString)
@@ -201,33 +200,32 @@ class MetaModelGenerator(val outputDir: Path) {
                     .build())
             }
             for (link in concept.references) {
-                addProperty(PropertySpec.builder(link.name, ClassName(language.name, link.type.instanceImplName()).copy(nullable = true))
+                addProperty(PropertySpec.builder(link.name, ClassName(language.name, link.type.nodeWrapperInterfaceName()).copy(nullable = true))
                     .addModifiers(KModifier.OVERRIDE)
                     .mutable(true)
-                    .delegate("""ReferenceAccessor(node, "${link.name}", ${link.type.instanceImplName()}::class)""")
+                    .delegate("""ReferenceAccessor(node, "${link.name}", ${link.type.nodeWrapperInterfaceName()}::class)""")
                     .build())
             }
             for (link in concept.children) {
                 // TODO resolve link.type and ensure it exists
                 val type = ChildrenAccessor::class.asClassName()
                     .parameterizedBy(
-                        ClassName(language.name, link.type.instanceImplName()))
+                        ClassName(language.name, link.type.nodeWrapperInterfaceName()))
                 val childConceptClassName = language.generatedClassName().nestedClass(link.type).canonicalName
                 addProperty(PropertySpec.builder(link.name, type)
                     .addModifiers(KModifier.OVERRIDE)
-                    .initializer("""ChildrenAccessor(node, "${link.name}", $childConceptClassName, ${link.type.instanceImplName()}::class)""")
+                    .initializer("""ChildrenAccessor(node, "${link.name}", $childConceptClassName, ${link.type.nodeWrapperInterfaceName()}::class)""")
                     .build())
             }
         }.build()
     }
 
-
-    private fun generateConceptInstanceInterface(language: Language, concept: Concept): TypeSpec {
-        return TypeSpec.interfaceBuilder(ClassName(language.name, concept.instanceInterfaceName())).apply {
+    private fun generateNodeWrapperInterface(language: Language, concept: Concept): TypeSpec {
+        return TypeSpec.interfaceBuilder(ClassName(language.name, concept.nodeWrapperInterfaceName())).apply {
             //addProperty(PropertySpec.builder("concept", ClassName(language.name, concept.conceptObjectName()), KModifier.OVERRIDE).build())
-            //addSuperinterface(IGeneratedConceptInstance::class.asTypeName())
+            if (concept.extends.isEmpty()) addSuperinterface(ITypedNode::class.asTypeName())
             for (extended in concept.extends) {
-                addSuperinterface(ClassName(language.name, extended.instanceInterfaceName()))
+                addSuperinterface(ClassName(language.name, extended.nodeWrapperInterfaceName()))
             }
             for (property in concept.properties) {
                 val optionalString = String::class.asTypeName().copy(nullable = true)
@@ -237,7 +235,7 @@ class MetaModelGenerator(val outputDir: Path) {
                     .build())
             }
             for (link in concept.references) {
-                addProperty(PropertySpec.builder(link.name, ClassName(language.name, link.type.instanceImplName()).copy(nullable = true))
+                addProperty(PropertySpec.builder(link.name, ClassName(language.name, link.type.nodeWrapperInterfaceName()).copy(nullable = true))
                     .mutable(true)
                     //.delegate("""ReferenceAccessor("${link.name}", ${link.type.instanceImplName()}::class)""")
                     .build())
@@ -246,7 +244,7 @@ class MetaModelGenerator(val outputDir: Path) {
                 // TODO resolve link.type and ensure it exists
                 val type = ChildrenAccessor::class.asClassName()
                     .parameterizedBy(
-                        ClassName(language.name, link.type.instanceImplName()))
+                        ClassName(language.name, link.type.nodeWrapperInterfaceName()))
                 val childConceptClassName = language.generatedClassName().nestedClass(link.type).canonicalName
                 addProperty(PropertySpec.builder(link.name, type)
                     //.initializer("""ChildrenAccessor(node, "${link.name}", $childConceptClassName, ${link.type.instanceImplName()}::class)""")
@@ -256,14 +254,14 @@ class MetaModelGenerator(val outputDir: Path) {
     }
 
     private fun Language.generatedClassName()  = ClassName(name, "L_" + name.replace(".", "_"))
-    private fun Concept.instanceInterfaceName() = name.instanceInterfaceName()
-    private fun String.instanceInterfaceName() = "IN_" + this
-    private fun Concept.instanceImplName() = name.instanceImplName()
-    private fun String.instanceImplName() = "N_" + this
+    private fun Concept.nodeWrapperInterfaceName() = name.nodeWrapperInterfaceName()
+    private fun String.nodeWrapperInterfaceName() = "N_" + this
+    private fun Concept.nodeWrapperImplName() = name.nodeWrapperImplName()
+    private fun String.nodeWrapperImplName() = "_N_" + this
     private fun Concept.conceptObjectName() = name.conceptObjectName()
-    private fun String.conceptObjectName() = "C_" + this
-    private fun Concept.conceptInterfaceName() = name.conceptInterfaceName()
-    private fun String.conceptInterfaceName() = "IC_" + this
-    private fun Concept.conceptWrapperName() = name.conceptWrapperName()
-    private fun String.conceptWrapperName() = "CW_" + this
+    private fun String.conceptObjectName() = "_CC_" + this
+    private fun Concept.conceptWrapperImplName() = name.conceptWrapperImplName()
+    private fun String.conceptWrapperImplName() = "_C_" + this
+    private fun Concept.conceptWrapperInterfaceName() = name.conceptWrapperInterfaceName()
+    private fun String.conceptWrapperInterfaceName() = "C_" + this
 }

@@ -5,7 +5,7 @@ import org.modelix.model.api.INode
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
-class ChildrenAccessor<ChildT : GeneratedConceptInstance>(
+class ChildrenAccessor<ChildT : ITypedNode>(
     val parent: INode,
     val role: String,
     val childConcept: IConcept,
@@ -29,7 +29,7 @@ class ChildrenAccessor<ChildT : GeneratedConceptInstance>(
         parent.removeChild(child)
     }
 
-    fun remove(child: GeneratedConceptInstance) {
+    fun remove(child: TypedNodeImpl) {
         remove(child.node)
     }
 }
