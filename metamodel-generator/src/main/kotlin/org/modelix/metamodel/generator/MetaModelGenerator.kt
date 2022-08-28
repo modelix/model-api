@@ -129,16 +129,24 @@ class MetaModelGenerator(val outputDir: Path) {
     }
 
     private fun generateConceptWrapperImpl(language: Language, concept: Concept): TypeSpec {
-        return TypeSpec.classBuilder(ClassName(language.name, concept.conceptWrapperName())).apply {
+        val ownCN = ClassName(language.name, concept.conceptWrapperName())
+        return TypeSpec.classBuilder(ownCN).apply {
             addModifiers(KModifier.OPEN)
             if (concept.extends.isEmpty()) {
             } else {
                 superclass(ClassName(language.name, concept.extends.first().conceptWrapperName()))
                 for (extended in concept.extends.drop(1)) {
-                    addSuperinterface(ClassName(language.name, extended.conceptInterfaceName()), CodeBlock.of(extended.conceptWrapperName() + "()"))
+                    addSuperinterface(ClassName(language.name, extended.conceptInterfaceName()), CodeBlock.of(extended.conceptWrapperName() + ".INSTANCE"))
                 }
             }
             addSuperinterface(ClassName(language.name, concept.conceptInterfaceName()))
+
+            primaryConstructor(FunSpec.constructorBuilder().addModifiers(KModifier.PROTECTED).build())
+
+            addProperty(PropertySpec.builder("concept", IConcept::class)
+                .addModifiers(KModifier.OVERRIDE)
+                .initializer(concept.conceptObjectName())
+                .build())
 
             for (property in concept.properties) {
                 addProperty(PropertySpec.builder(property.name, IProperty::class)
@@ -158,17 +166,19 @@ class MetaModelGenerator(val outputDir: Path) {
                     .initializer(concept.conceptObjectName() + "." + link.name)
                     .build())
             }
+
+            addType(TypeSpec.companionObjectBuilder()
+                .addProperty(PropertySpec.builder("INSTANCE", ownCN).initializer(ownCN.simpleName + "()").build())
+                .build())
         }.build()
     }
 
     private fun generateConceptInstanceClass(language: Language, concept: Concept): TypeSpec {
         return TypeSpec.classBuilder(ClassName(language.name, concept.instanceImplName())).apply {
             addModifiers(KModifier.OPEN)
-            val conceptType =
-                //ClassName(language.name, concept.conceptObjectName())
-                IConcept::class
+            val conceptType = ClassName(language.name, concept.conceptInterfaceName())
             addProperty(PropertySpec.builder("concept", conceptType, KModifier.OVERRIDE)
-                .initializer(concept.conceptObjectName())
+                .initializer(concept.conceptWrapperName() + ".INSTANCE")
                 .build())
             primaryConstructor(FunSpec.constructorBuilder().addParameter("node", INode::class).build())
             if (concept.extends.isEmpty()) {
