@@ -39,11 +39,15 @@ data class Concept(
     val extends: List<String> = emptyList(),
 )
 
+interface IConceptFeature {
+    val name: String
+}
+
 @Serializable
-data class Property(
-    val name: String,
+data class Property (
+    override val name: String,
     val type: PropertyType = PropertyType.STRING
-)
+) : IConceptFeature
 
 enum class PropertyType {
     STRING,
@@ -51,15 +55,15 @@ enum class PropertyType {
 
 @Serializable
 data class Child(
-    val name: String,
+    override val name: String,
     val type: String,
     val multiple: Boolean = false,
     val optional: Boolean = true,
-)
+) : IConceptFeature
 
 @Serializable
 data class Reference(
-    val name: String,
+    override val name: String,
     val type: String,
     val optional: Boolean = true,
-)
+) : IConceptFeature

@@ -15,6 +15,6 @@ class ReferenceAccessor<SourceT, TargetT : ITypedNode>(
     }
 
     operator fun setValue(thisRef: SourceT, property: KProperty<*>, target: TargetT?) {
-        node.setReferenceTarget(role, target?.node)
+        node.setReferenceTarget(role, target?._node)
     }
 }

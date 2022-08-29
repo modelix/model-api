@@ -30,6 +30,6 @@ class ChildrenAccessor<ChildT : ITypedNode>(
     }
 
     fun remove(child: TypedNodeImpl) {
-        remove(child.node)
+        remove(child._node)
     }
 }
