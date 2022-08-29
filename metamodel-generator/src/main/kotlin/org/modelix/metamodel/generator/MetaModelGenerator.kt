@@ -179,6 +179,14 @@ class MetaModelGenerator(val outputDir: Path) {
             addProperty(PropertySpec.builder("concept", conceptType, KModifier.OVERRIDE)
                 .initializer(concept.conceptWrapperInterfaceName() + ".INSTANCE")
                 .build())
+
+            if (concept.extends.size > 1) {
+                // fix kotlin warning about ambiguity in case of multiple inheritance
+                addProperty(PropertySpec.builder("node", INode::class, KModifier.OVERRIDE)
+                    .getter(FunSpec.getterBuilder().addStatement("return super.node").build())
+                    .build())
+            }
+
             primaryConstructor(FunSpec.constructorBuilder().addParameter("node", INode::class).build())
             if (concept.extends.isEmpty()) {
                 superclass(TypedNodeImpl::class)
