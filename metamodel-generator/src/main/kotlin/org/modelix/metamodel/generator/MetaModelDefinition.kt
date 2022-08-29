@@ -14,9 +14,11 @@ data class Language(
 ) {
 
     fun toYaml(): String = Yaml.default.encodeToString(this)
-    fun toJson(): String = Json.encodeToString(this)
+    fun toJson(): String = prettyJson.encodeToString(this)
+    fun toCompactJson(): String = Json.encodeToString(this)
 
     companion object {
+        private val prettyJson = Json { prettyPrint = true }
         fun fromFile(file: File): Language {
             return when (file.extension.lowercase()) {
                 "yaml" -> Yaml.default.decodeFromString(file.readText())
