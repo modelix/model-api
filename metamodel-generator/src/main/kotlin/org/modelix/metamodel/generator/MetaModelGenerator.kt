@@ -219,10 +219,9 @@ class MetaModelGenerator(val outputDir: Path) {
                 val type = ChildrenAccessor::class.asClassName()
                     .parameterizedBy(
                         ClassName(language.name, link.type.nodeWrapperInterfaceName()))
-                val childConceptClassName = language.generatedClassName().nestedClass(link.type).canonicalName
                 addProperty(PropertySpec.builder(link.name, type)
                     .addModifiers(KModifier.OVERRIDE)
-                    .initializer("""ChildrenAccessor(node, "${link.name}", $childConceptClassName, ${link.type.nodeWrapperInterfaceName()}::class)""")
+                    .initializer("""ChildrenAccessor(node, "${link.name}", ${link.type.conceptObjectName()}, ${link.type.nodeWrapperInterfaceName()}::class)""")
                     .build())
             }
         }.build()
