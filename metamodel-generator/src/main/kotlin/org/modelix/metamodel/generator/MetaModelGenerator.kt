@@ -263,13 +263,21 @@ class MetaModelGenerator(val outputDir: Path) {
 
     private fun Language.generatedClassName()  = ClassName(name, "L_" + name.replace(".", "_"))
     private fun Concept.nodeWrapperInterfaceName() = name.nodeWrapperInterfaceName()
-    private fun String.nodeWrapperInterfaceName() = "N_" + this
+    private fun String.nodeWrapperInterfaceName() = fqNamePrefix("N_")
     private fun Concept.nodeWrapperImplName() = name.nodeWrapperImplName()
-    private fun String.nodeWrapperImplName() = "_N_" + this
+    private fun String.nodeWrapperImplName() = fqNamePrefix("_N_")
     private fun Concept.conceptObjectName() = name.conceptObjectName()
-    private fun String.conceptObjectName() = "_CC_" + this
+    private fun String.conceptObjectName() = fqNamePrefix("_CC_")
     private fun Concept.conceptWrapperImplName() = name.conceptWrapperImplName()
-    private fun String.conceptWrapperImplName() = "_C_" + this
+    private fun String.conceptWrapperImplName() = fqNamePrefix("_C_")
     private fun Concept.conceptWrapperInterfaceName() = name.conceptWrapperInterfaceName()
-    private fun String.conceptWrapperInterfaceName() = "C_" + this
+    private fun String.conceptWrapperInterfaceName() = fqNamePrefix("C_")
+    private fun String.fqNamePrefix(prefix: String): String {
+        return if (contains(".")) {
+            listOf(this.substringBeforeLast("."), prefix + this.substringAfterLast("."))
+                .joinToString(".")
+        } else {
+            prefix + this
+        }
+    }
 }
