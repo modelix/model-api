@@ -323,7 +323,8 @@ class MetaModelGenerator(val outputDir: Path) {
             .map { FeatureInConcept(this, it) }
         fun allFeatures(): List<FeatureInConcept> = allSuperConcepts().flatMap { it.directFeatures() }.distinct()
         fun directFeaturesAndConflicts(): List<FeatureInConcept> =
-            (directFeatures() + resolveMultipleInheritanceConflicts().flatMap { it.key.allFeatures() }).distinct()
+            (directFeatures() + resolveMultipleInheritanceConflicts().flatMap { it.key.allFeatures() })
+                .distinct().groupBy { it.data.name }.values.map { it.first() }
         fun ref() = ConceptRef(language.name, concept.name)
         fun loadInheritance(directSuperConcept: ConceptInLanguage, inheritedFrom: MutableMap<ConceptInLanguage, MutableSet<ConceptInLanguage>>) {
             for (superConcept in resolvedDirectSuperConcepts) {
