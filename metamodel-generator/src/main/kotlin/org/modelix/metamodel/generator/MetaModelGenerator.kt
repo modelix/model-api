@@ -119,7 +119,6 @@ class MetaModelGenerator(val outputDir: Path) {
 
     private fun generateConceptWrapperInterface(concept: ConceptInLanguage): TypeSpec {
         return TypeSpec.interfaceBuilder(concept.conceptWrapperImplType()).apply {
-            //addProperty(PropertySpec.builder("concept", ClassName(language.name, concept.conceptObjectName()), KModifier.OVERRIDE).build())
             addSuperinterface(ITypedConcept::class)
             for (extended in concept.extended()) {
                 addSuperinterface(extended.conceptWrapperImplType())
@@ -150,7 +149,7 @@ class MetaModelGenerator(val outputDir: Path) {
 
             primaryConstructor(FunSpec.constructorBuilder().addModifiers(KModifier.PROTECTED).build())
 
-            addProperty(PropertySpec.builder("concept", IConcept::class)
+            addProperty(PropertySpec.builder(ITypedConcept::_concept.name, IConcept::class)
                 .addModifiers(KModifier.OVERRIDE)
                 .initializer(concept.conceptObjectName())
                 .build())
@@ -188,7 +187,7 @@ class MetaModelGenerator(val outputDir: Path) {
     private fun generateNodeWrapperImpl(concept: ConceptInLanguage): TypeSpec {
         return TypeSpec.classBuilder(concept.nodeWrapperImplType()).apply {
             addModifiers(KModifier.OPEN)
-            addProperty(PropertySpec.builder("concept", concept.conceptWrapperImplType(), KModifier.OVERRIDE)
+            addProperty(PropertySpec.builder(TypedNodeImpl::_concept.name, concept.conceptWrapperImplType(), KModifier.OVERRIDE)
                 .initializer(concept.conceptWrapperInterfaceType().simpleName + ".INSTANCE")
                 .build())
 
@@ -245,7 +244,6 @@ class MetaModelGenerator(val outputDir: Path) {
 
     private fun generateNodeWrapperInterface(concept: ConceptInLanguage): TypeSpec {
         return TypeSpec.interfaceBuilder(concept.nodeWrapperInterfaceType()).apply {
-            //addProperty(PropertySpec.builder("concept", ClassName(language.name, concept.conceptObjectName()), KModifier.OVERRIDE).build())
             if (concept.extends().isEmpty()) addSuperinterface(ITypedNode::class.asTypeName())
             for (extended in concept.extends()) {
                 addSuperinterface(extended.nodeWrapperInterfaceType())
