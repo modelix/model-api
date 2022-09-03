@@ -7,6 +7,7 @@ import org.modelix.model.api.*
 import java.nio.file.Path
 import kotlin.reflect.KClass
 
+private val reservedPropertyNames = setOf(IConcept::language.name)
 
 class MetaModelGenerator(val outputDir: Path) {
     private val languagesMap = HashMap<String, Language>()
@@ -86,7 +87,7 @@ class MetaModelGenerator(val outputDir: Path) {
             addProperty(PropertySpec.builder("instanceClass", instanceClassType, KModifier.OVERRIDE)
                 .initializer(concept.nodeWrapperImplName() + "::class")
                 .build())
-            addProperty(PropertySpec.builder("language", ILanguage::class, KModifier.OVERRIDE)
+            addProperty(PropertySpec.builder(IConcept::language.name, ILanguage::class, KModifier.OVERRIDE)
                 .initializer(concept.language.generatedClassName().simpleName)
                 .build())
             addFunction(FunSpec.builder("wrap")
@@ -99,20 +100,24 @@ class MetaModelGenerator(val outputDir: Path) {
                 .addStatement("return listOf(${concept.concept.extends.joinToString(", ") { it.conceptObjectName() } })")
                 .returns(List::class.asTypeName().parameterizedBy(IConcept::class.asTypeName()))
                 .build())
-            for (property in concept.concept.properties) {
-                addProperty(PropertySpec.builder(property.name, IProperty::class)
-                    .initializer("""newProperty("${property.name}")""")
-                    .build())
-            }
-            for (link in concept.concept.references) {
-                addProperty(PropertySpec.builder(link.name, IReferenceLink::class)
-                    .initializer("""newReferenceLink("${link.name}", ${link.optional}, ${link.type.conceptObjectName()})""")
-                    .build())
-            }
-            for (link in concept.concept.children) {
-                addProperty(PropertySpec.builder(link.name, IChildLink::class)
-                    .initializer("""newChildLink("${link.name}", ${link.multiple}, ${link.optional}, ${link.type.conceptObjectName()})""")
-                    .build())
+            for (feature in concept.directFeatures()) {
+                when (val data = feature.data) {
+                    is Property -> {
+                        addProperty(PropertySpec.builder(feature.validName, IProperty::class)
+                            .initializer("""newProperty("${feature.originalName}")""")
+                            .build())
+                    }
+                    is Child -> {
+                        addProperty(PropertySpec.builder(feature.validName, IChildLink::class)
+                            .initializer("""newChildLink("${feature.originalName}", ${data.multiple}, ${data.optional}, ${data.type.conceptObjectName()})""")
+                            .build())
+                    }
+                    is Reference -> {
+                        addProperty(PropertySpec.builder(feature.validName, IReferenceLink::class)
+                            .initializer("""newReferenceLink("${feature.originalName}", ${data.optional}, ${data.type.conceptObjectName()})""")
+                            .build())
+                    }
+                }
             }
         }.build()
     }
@@ -123,14 +128,12 @@ class MetaModelGenerator(val outputDir: Path) {
             for (extended in concept.extended()) {
                 addSuperinterface(extended.conceptWrapperImplType())
             }
-            for (property in concept.concept.properties) {
-                addProperty(PropertySpec.builder(property.name, IProperty::class).build())
-            }
-            for (link in concept.concept.references) {
-                addProperty(PropertySpec.builder(link.name, IReferenceLink::class).build())
-            }
-            for (link in concept.concept.children) {
-                addProperty(PropertySpec.builder(link.name, IChildLink::class).build())
+            for (feature in concept.directFeatures()) {
+                when (val data = feature.data) {
+                    is Property -> addProperty(PropertySpec.builder(feature.validName, IProperty::class).build())
+                    is Child -> addProperty(PropertySpec.builder(feature.validName, IChildLink::class).build())
+                    is Reference -> addProperty(PropertySpec.builder(feature.validName, IReferenceLink::class).build())
+                }
             }
         }.build()
     }
@@ -157,19 +160,19 @@ class MetaModelGenerator(val outputDir: Path) {
             for (feature in concept.directFeaturesAndConflicts()) {
                 when (val data = feature.data) {
                     is Property -> {
-                        addProperty(PropertySpec.builder(data.name, IProperty::class)
+                        addProperty(PropertySpec.builder(feature.validName, IProperty::class)
                             .addModifiers(KModifier.OVERRIDE)
                             .initializer(feature.kotlinRef())
                             .build())
                     }
                     is Child -> {
-                        addProperty(PropertySpec.builder(data.name, IChildLink::class)
+                        addProperty(PropertySpec.builder(feature.validName, IChildLink::class)
                             .addModifiers(KModifier.OVERRIDE)
                             .initializer(feature.kotlinRef())
                             .build())
                     }
                     is Reference -> {
-                        addProperty(PropertySpec.builder(data.name, IReferenceLink::class)
+                        addProperty(PropertySpec.builder(feature.validName, IReferenceLink::class)
                             .addModifiers(KModifier.OVERRIDE)
                             .initializer(feature.kotlinRef())
                             .build())
@@ -214,10 +217,10 @@ class MetaModelGenerator(val outputDir: Path) {
                 when (val data = feature.data) {
                     is Property -> {
                         val optionalString = String::class.asTypeName().copy(nullable = true)
-                        addProperty(PropertySpec.builder(data.name, optionalString)
+                        addProperty(PropertySpec.builder(feature.validName, optionalString)
                             .addModifiers(KModifier.OVERRIDE)
                             .mutable(true)
-                            .delegate("""PropertyAccessor(${ITypedNode::_node.name}, "${data.name}")""")
+                            .delegate("""PropertyAccessor(${ITypedNode::_node.name}, "${feature.originalName}")""")
                             .build())
                     }
                     is Child -> {
@@ -225,16 +228,16 @@ class MetaModelGenerator(val outputDir: Path) {
                         val type = ChildrenAccessor::class.asClassName()
                             .parameterizedBy(
                                 data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType())
-                        addProperty(PropertySpec.builder(data.name, type)
+                        addProperty(PropertySpec.builder(feature.validName, type)
                             .addModifiers(KModifier.OVERRIDE)
-                            .initializer("""ChildrenAccessor(${ITypedNode::_node.name}, "${data.name}", ${data.type.conceptObjectName()}, ${data.type.nodeWrapperInterfaceName()}::class)""")
+                            .initializer("""ChildrenAccessor(${ITypedNode::_node.name}, "${feature.originalName}", ${data.type.conceptObjectName()}, ${data.type.nodeWrapperInterfaceName()}::class)""")
                             .build())
                     }
                     is Reference -> {
-                        addProperty(PropertySpec.builder(data.name, data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType().copy(nullable = true))
+                        addProperty(PropertySpec.builder(feature.validName, data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType().copy(nullable = true))
                             .addModifiers(KModifier.OVERRIDE)
                             .mutable(true)
-                            .delegate("""ReferenceAccessor(${ITypedNode::_node.name}, "${data.name}", ${data.type.nodeWrapperInterfaceName()}::class)""")
+                            .delegate("""ReferenceAccessor(${ITypedNode::_node.name}, "${feature.originalName}", ${data.type.nodeWrapperInterfaceName()}::class)""")
                             .build())
                     }
                 }
@@ -252,7 +255,7 @@ class MetaModelGenerator(val outputDir: Path) {
                 when (val data = feature.data) {
                     is Property -> {
                         val optionalString = String::class.asTypeName().copy(nullable = true)
-                        addProperty(PropertySpec.builder(data.name, optionalString)
+                        addProperty(PropertySpec.builder(feature.validName, optionalString)
                             .mutable(true)
                             .build())
                     }
@@ -261,11 +264,11 @@ class MetaModelGenerator(val outputDir: Path) {
                         val type = ChildrenAccessor::class.asClassName()
                             .parameterizedBy(
                                 data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType())
-                        addProperty(PropertySpec.builder(data.name, type)
+                        addProperty(PropertySpec.builder(feature.validName, type)
                             .build())
                     }
                     is Reference -> {
-                        addProperty(PropertySpec.builder(data.name, data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType().copy(nullable = true))
+                        addProperty(PropertySpec.builder(feature.validName, data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType().copy(nullable = true))
                             .mutable(true)
                             .build())
                     }
@@ -324,7 +327,7 @@ class MetaModelGenerator(val outputDir: Path) {
         fun allFeatures(): List<FeatureInConcept> = allSuperConcepts().flatMap { it.directFeatures() }.distinct()
         fun directFeaturesAndConflicts(): List<FeatureInConcept> =
             (directFeatures() + resolveMultipleInheritanceConflicts().flatMap { it.key.allFeatures() })
-                .distinct().groupBy { it.data.name }.values.map { it.first() }
+                .distinct().groupBy { it.validName }.values.map { it.first() }
         fun ref() = ConceptRef(language.name, concept.name)
         fun loadInheritance(directSuperConcept: ConceptInLanguage, inheritedFrom: MutableMap<ConceptInLanguage, MutableSet<ConceptInLanguage>>) {
             for (superConcept in resolvedDirectSuperConcepts) {
@@ -353,7 +356,9 @@ class MetaModelGenerator(val outputDir: Path) {
     }
 
     private data class FeatureInConcept(val concept: ConceptInLanguage, val data: IConceptFeature) {
-        fun kotlinRef() = concept.conceptObjectType().canonicalName + "." + CodeBlock.of("%N", data.name)
+        val validName: String = if (reservedPropertyNames.contains(data.name)) data.name + "_" else data.name
+        val originalName: String = data.name
+        fun kotlinRef() = concept.conceptObjectType().canonicalName + "." + CodeBlock.of("%N", validName)
     }
 
     private inner class ConceptRef(val languageName: String, val conceptName: String) {
