@@ -4,6 +4,7 @@ import org.modelix.model.api.*
 import kotlin.reflect.KClass
 
 abstract class GeneratedConcept<InstanceT : ITypedNode, WrapperT : ITypedConcept>(private val is_abstract: Boolean) : IConcept {
+    abstract val _typed: WrapperT
     abstract val instanceClass: KClass<InstanceT>
     private val propertiesMap: MutableMap<String, GeneratedProperty> = LinkedHashMap()
     private val childLinksMap: MutableMap<String, GeneratedChildLink> = LinkedHashMap()
