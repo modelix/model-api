@@ -15,11 +15,8 @@
 
 package org.modelix.model.api
 
-interface IChildLink {
-    fun getConcept(): IConcept
-    fun getUID(): String
-    val name: String
+interface IChildLink : ILink {
     val isMultiple: Boolean
-    val isOptional: Boolean
+    @Deprecated("use .targetConcept")
     val childConcept: IConcept
 }

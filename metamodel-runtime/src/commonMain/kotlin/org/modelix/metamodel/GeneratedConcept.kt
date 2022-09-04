@@ -115,8 +115,9 @@ class GeneratedChildLink(
     override val name: String,
     override val isMultiple: Boolean,
     override val isOptional: Boolean,
-    override val childConcept: IConcept,
+    override val targetConcept: IConcept,
 ) : IChildLink {
+    override val childConcept: IConcept = targetConcept
 
     override fun getConcept(): IConcept = owner
 

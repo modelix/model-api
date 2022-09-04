@@ -37,3 +37,12 @@ interface INode {
     fun getPropertyRoles(): List<String>
     fun getReferenceRoles(): List<String>
 }
+
+private fun IRole.key(): String = name
+fun INode.getChildren(link: IChildLink): Iterable<INode> = getChildren(link.key())
+fun INode.moveChild(role: IChildLink, index: Int, child: INode): Unit = moveChild(role.key(), index, child)
+fun INode.addNewChild(role: IChildLink, index: Int, concept: IConcept?) = addNewChild(role.key(), index, concept)
+fun INode.getReferenceTarget(link: IReferenceLink): INode? = getReferenceTarget(link.key())
+fun INode.setReferenceTarget(link: IReferenceLink, target: INode?): Unit = setReferenceTarget(link.key(), target)
+fun INode.getPropertyValue(property: IProperty): String? = getPropertyValue(property.key())
+fun INode.setPropertyValue(property: IProperty, value: String?): Unit = setPropertyValue(property.key(), value)
