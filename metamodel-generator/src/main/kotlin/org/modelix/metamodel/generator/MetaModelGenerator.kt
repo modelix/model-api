@@ -111,13 +111,13 @@ class MetaModelGenerator(val outputDir: Path) {
                             .build())
                     }
                     is Child -> {
-                        addProperty(PropertySpec.builder(feature.validName, IChildLink::class)
-                            .initializer("""${GeneratedConcept<*, *>::newChildLink.name}("${feature.originalName}", ${data.multiple}, ${data.optional}, ${data.type.conceptObjectName()})""")
+                        addProperty(PropertySpec.builder(feature.validName, feature.generatedChildLinkType())
+                            .initializer("""newChildLink("${feature.originalName}", ${data.multiple}, ${data.optional}, ${data.type.conceptObjectName()})""")
                             .build())
                     }
                     is Reference -> {
-                        addProperty(PropertySpec.builder(feature.validName, IReferenceLink::class)
-                            .initializer("""${GeneratedConcept<*, *>::newReferenceLink.name}("${feature.originalName}", ${data.optional}, ${data.type.conceptObjectName()})""")
+                        addProperty(PropertySpec.builder(feature.validName, feature.generatedReferenceLinkType())
+                            .initializer("""newReferenceLink("${feature.originalName}", ${data.optional}, ${data.type.conceptObjectName()})""")
                             .build())
                     }
                 }
@@ -134,8 +134,8 @@ class MetaModelGenerator(val outputDir: Path) {
             for (feature in concept.directFeatures()) {
                 when (val data = feature.data) {
                     is Property -> addProperty(PropertySpec.builder(feature.validName, IProperty::class).build())
-                    is Child -> addProperty(PropertySpec.builder(feature.validName, IChildLink::class).build())
-                    is Reference -> addProperty(PropertySpec.builder(feature.validName, IReferenceLink::class).build())
+                    is Child -> addProperty(PropertySpec.builder(feature.validName, feature.generatedChildLinkType()).build())
+                    is Reference -> addProperty(PropertySpec.builder(feature.validName, feature.generatedReferenceLinkType()).build())
                 }
             }
         }.build()
@@ -169,13 +169,13 @@ class MetaModelGenerator(val outputDir: Path) {
                             .build())
                     }
                     is Child -> {
-                        addProperty(PropertySpec.builder(feature.validName, IChildLink::class)
+                        addProperty(PropertySpec.builder(feature.validName, feature.generatedChildLinkType())
                             .addModifiers(KModifier.OVERRIDE)
                             .initializer(feature.kotlinRef())
                             .build())
                     }
                     is Reference -> {
-                        addProperty(PropertySpec.builder(feature.validName, IReferenceLink::class)
+                        addProperty(PropertySpec.builder(feature.validName, feature.generatedReferenceLinkType())
                             .addModifiers(KModifier.OVERRIDE)
                             .initializer(feature.kotlinRef())
                             .build())
@@ -283,25 +283,6 @@ class MetaModelGenerator(val outputDir: Path) {
         }.build()
     }
 
-    private fun Language.generatedClassName()  = ClassName(name, "L_" + name.replace(".", "_"))
-    private fun Concept.nodeWrapperInterfaceName() = name.nodeWrapperInterfaceName()
-    private fun String.nodeWrapperInterfaceName() = fqNamePrefix("N_")
-    private fun Concept.nodeWrapperImplName() = name.nodeWrapperImplName()
-    private fun String.nodeWrapperImplName() = fqNamePrefix("_N_TypedImpl_")
-    private fun Concept.conceptObjectName() = name.conceptObjectName()
-    private fun String.conceptObjectName() = fqNamePrefix("_C_Impl_")
-    private fun Concept.conceptWrapperImplName() = name.conceptWrapperImplName()
-    private fun String.conceptWrapperImplName() = fqNamePrefix("_C_TypedImpl_")
-    private fun Concept.conceptWrapperInterfaceName() = name.conceptWrapperInterfaceName()
-    private fun String.conceptWrapperInterfaceName() = fqNamePrefix("C_")
-    private fun String.fqNamePrefix(prefix: String, suffix: String = ""): String {
-        return if (this.contains(".")) {
-            this.substringBeforeLast(".") + "." + prefix + this.substringAfterLast(".")
-        } else {
-            prefix + this
-        } + suffix
-    }
-
     private inner class ConceptInLanguage(val concept: Concept, val language: Language) {
         /**
          * Unknown concepts are not included!
@@ -365,25 +346,57 @@ class MetaModelGenerator(val outputDir: Path) {
         val validName: String = if (reservedPropertyNames.contains(data.name)) data.name + "_" else data.name
         val originalName: String = data.name
         fun kotlinRef() = concept.conceptObjectType().canonicalName + "." + CodeBlock.of("%N", validName)
-    }
-
-    private inner class ConceptRef(val languageName: String, val conceptName: String) {
-        init {
-            require(!conceptName.contains(".")) { "Simple name expected for concept: $conceptName" }
+        fun generatedChildLinkType(): TypeName {
+            val childConcept = (data as Child).type.parseConceptRef(concept.language)
+            return GeneratedChildLink::class.asClassName().parameterizedBy(
+                childConcept.nodeWrapperInterfaceType(), childConcept.conceptWrapperInterfaceType())
         }
-        override fun toString(): String = languageName + "." + conceptName
-
-        fun conceptWrapperImplType() = ClassName(languageName, conceptName.conceptWrapperImplName())
-        fun conceptWrapperInterfaceType() = ClassName(languageName, conceptName.conceptWrapperInterfaceName())
-        fun nodeWrapperImplType() = ClassName(languageName, conceptName.nodeWrapperImplName())
-        fun nodeWrapperInterfaceType() = ClassName(languageName, conceptName.nodeWrapperInterfaceName())
-    }
-    private fun String.parseConceptRef(contextLanguage: Language): ConceptRef {
-        return if (this.contains(".")) {
-            ConceptRef(this.substringBeforeLast("."), this.substringAfterLast("."))
-        } else {
-            ConceptRef(contextLanguage.name, this)
+        fun generatedReferenceLinkType(): TypeName {
+            val targetConcept = (data as Reference).type.parseConceptRef(concept.language)
+            return GeneratedReferenceLink::class.asClassName().parameterizedBy(
+                targetConcept.nodeWrapperInterfaceType(), targetConcept.conceptWrapperInterfaceType())
         }
     }
+
     private fun Language.getConceptsInLanguage() = concepts.map { ConceptInLanguage(it, this) }
+}
+
+private fun String.parseConceptRef(contextLanguage: Language): ConceptRef {
+    return if (this.contains(".")) {
+        ConceptRef(this.substringBeforeLast("."), this.substringAfterLast("."))
+    } else {
+        ConceptRef(contextLanguage.name, this)
+    }
+}
+
+
+private class ConceptRef(val languageName: String, val conceptName: String) {
+    init {
+        require(!conceptName.contains(".")) { "Simple name expected for concept: $conceptName" }
+    }
+    override fun toString(): String = languageName + "." + conceptName
+
+    fun conceptWrapperImplType() = ClassName(languageName, conceptName.conceptWrapperImplName())
+    fun conceptWrapperInterfaceType() = ClassName(languageName, conceptName.conceptWrapperInterfaceName())
+    fun nodeWrapperImplType() = ClassName(languageName, conceptName.nodeWrapperImplName())
+    fun nodeWrapperInterfaceType() = ClassName(languageName, conceptName.nodeWrapperInterfaceName())
+}
+
+private fun Language.generatedClassName()  = ClassName(name, "L_" + name.replace(".", "_"))
+private fun Concept.nodeWrapperInterfaceName() = name.nodeWrapperInterfaceName()
+private fun String.nodeWrapperInterfaceName() = fqNamePrefix("N_")
+private fun Concept.nodeWrapperImplName() = name.nodeWrapperImplName()
+private fun String.nodeWrapperImplName() = fqNamePrefix("_N_TypedImpl_")
+private fun Concept.conceptObjectName() = name.conceptObjectName()
+private fun String.conceptObjectName() = fqNamePrefix("_C_Impl_")
+private fun Concept.conceptWrapperImplName() = name.conceptWrapperImplName()
+private fun String.conceptWrapperImplName() = fqNamePrefix("_C_TypedImpl_")
+private fun Concept.conceptWrapperInterfaceName() = name.conceptWrapperInterfaceName()
+private fun String.conceptWrapperInterfaceName() = fqNamePrefix("C_")
+private fun String.fqNamePrefix(prefix: String, suffix: String = ""): String {
+    return if (this.contains(".")) {
+        this.substringBeforeLast(".") + "." + prefix + this.substringAfterLast(".")
+    } else {
+        prefix + this
+    } + suffix
 }

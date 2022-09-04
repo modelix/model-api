@@ -7,8 +7,8 @@ abstract class GeneratedConcept<InstanceT : ITypedNode, WrapperT : ITypedConcept
     abstract val _typed: WrapperT
     abstract val instanceClass: KClass<InstanceT>
     private val propertiesMap: MutableMap<String, GeneratedProperty> = LinkedHashMap()
-    private val childLinksMap: MutableMap<String, GeneratedChildLink> = LinkedHashMap()
-    private val referenceLinksMap: MutableMap<String, GeneratedReferenceLink> = LinkedHashMap()
+    private val childLinksMap: MutableMap<String, GeneratedChildLink<*, *>> = LinkedHashMap()
+    private val referenceLinksMap: MutableMap<String, GeneratedReferenceLink<*, *>> = LinkedHashMap()
 
     abstract fun wrap(node: INode): InstanceT
 
@@ -16,20 +16,20 @@ abstract class GeneratedConcept<InstanceT : ITypedNode, WrapperT : ITypedConcept
         return is_abstract
     }
 
-    fun newProperty(name: String): IProperty {
+    fun newProperty(name: String): GeneratedProperty {
         return GeneratedProperty(this, name).also {
             propertiesMap[name] = it
         }
     }
 
-    fun newChildLink(name: String, isMultiple: Boolean, isOptional: Boolean, targetConcept: IConcept): IChildLink {
-        return GeneratedChildLink(this, name, isMultiple, isOptional, targetConcept).also {
+    fun <ChildNodeT : ITypedNode, ChildConceptT : ITypedConcept> newChildLink(name: String, isMultiple: Boolean, isOptional: Boolean, targetConcept: IConcept): GeneratedChildLink<ChildNodeT, ChildConceptT> {
+        return GeneratedChildLink<ChildNodeT, ChildConceptT>(this, name, isMultiple, isOptional, targetConcept).also {
             childLinksMap[name] = it
         }
     }
 
-    fun newReferenceLink(name: String, isOptional: Boolean, targetConcept: IConcept): IReferenceLink {
-        return GeneratedReferenceLink(this, name, isOptional, targetConcept).also {
+    fun <TargetNodeT : ITypedNode, TargetConceptT : ITypedConcept> newReferenceLink(name: String, isOptional: Boolean, targetConcept: IConcept): GeneratedReferenceLink<TargetNodeT, TargetConceptT> {
+        return GeneratedReferenceLink<TargetNodeT, TargetConceptT>(this, name, isOptional, targetConcept).also {
             referenceLinksMap[name] = it
         }
     }
@@ -110,7 +110,7 @@ class GeneratedProperty(private val owner: IConcept, override val name: String) 
     override fun getUID(): String = getConcept().getUID() + "." + name
 }
 
-class GeneratedChildLink(
+class GeneratedChildLink<ChildNodeT : ITypedNode, ChildConceptT : ITypedConcept>(
     private val owner: IConcept,
     override val name: String,
     override val isMultiple: Boolean,
@@ -124,7 +124,7 @@ class GeneratedChildLink(
     override fun getUID(): String = getConcept().getUID() + "." + name
 }
 
-class GeneratedReferenceLink(
+class GeneratedReferenceLink<TargetNodeT : ITypedNode, TargetConceptT : ITypedConcept>(
     private val owner: IConcept,
     override val name: String,
     override val isOptional: Boolean,
