@@ -5,12 +5,14 @@ import org.modelix.model.api.INode
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
-class ChildrenAccessor<ChildT : ITypedNode>(
-    val parent: INode,
-    val role: String,
-    val childConcept: IConcept,
-    val childType: KClass<ChildT>,
-) : Iterable<ChildT> {
+abstract class ChildAccessor<ChildT : ITypedNode>(
+    private val parent: INode,
+    private val role: String,
+    private val childConcept: IConcept,
+    private val childType: KClass<ChildT>,
+): Iterable<ChildT> {
+    fun isEmpty(): Boolean = iterator().hasNext()
+
     override fun iterator(): Iterator<ChildT> {
         return parent.getChildren(role).map {
             val wrapped = when (childConcept) {

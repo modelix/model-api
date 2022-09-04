@@ -223,24 +223,25 @@ class MetaModelGenerator(val outputDir: Path) {
                         addProperty(PropertySpec.builder(feature.validName, optionalString)
                             .addModifiers(KModifier.OVERRIDE)
                             .mutable(true)
-                            .delegate("""PropertyAccessor(${ITypedNode::_node.name}, "${feature.originalName}")""")
+                            .delegate("""${PropertyAccessor::class.qualifiedName}(${ITypedNode::_node.name}, "${feature.originalName}")""")
                             .build())
                     }
                     is Child -> {
                         // TODO resolve link.type and ensure it exists
-                        val type = ChildrenAccessor::class.asClassName()
+                        val type = ChildListAccessor::class.asClassName()
                             .parameterizedBy(
                                 data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType())
+                        val accessorName = (if (data.multiple) ChildListAccessor::class else  ChildAccessor::class).qualifiedName
                         addProperty(PropertySpec.builder(feature.validName, type)
                             .addModifiers(KModifier.OVERRIDE)
-                            .initializer("""ChildrenAccessor(${ITypedNode::_node.name}, "${feature.originalName}", ${data.type.conceptObjectName()}, ${data.type.nodeWrapperInterfaceName()}::class)""")
+                            .initializer("""$accessorName(${ITypedNode::_node.name}, "${feature.originalName}", ${data.type.conceptObjectName()}, ${data.type.nodeWrapperInterfaceName()}::class)""")
                             .build())
                     }
                     is Reference -> {
                         addProperty(PropertySpec.builder(feature.validName, data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType().copy(nullable = true))
                             .addModifiers(KModifier.OVERRIDE)
                             .mutable(true)
-                            .delegate("""ReferenceAccessor(${ITypedNode::_node.name}, "${feature.originalName}", ${data.type.nodeWrapperInterfaceName()}::class)""")
+                            .delegate("""${ReferenceAccessor::class.qualifiedName}(${ITypedNode::_node.name}, "${feature.originalName}", ${data.type.nodeWrapperInterfaceName()}::class)""")
                             .build())
                     }
                 }
@@ -264,7 +265,7 @@ class MetaModelGenerator(val outputDir: Path) {
                     }
                     is Child -> {
                         // TODO resolve link.type and ensure it exists
-                        val type = ChildrenAccessor::class.asClassName()
+                        val type = ChildListAccessor::class.asClassName()
                             .parameterizedBy(
                                 data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType())
                         addProperty(PropertySpec.builder(feature.validName, type)
