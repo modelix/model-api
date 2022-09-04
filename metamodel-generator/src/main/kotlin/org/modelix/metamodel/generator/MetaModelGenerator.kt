@@ -228,10 +228,11 @@ class MetaModelGenerator(val outputDir: Path) {
                     }
                     is Child -> {
                         // TODO resolve link.type and ensure it exists
-                        val type = ChildListAccessor::class.asClassName()
+                        val accessorSubclass = if (data.multiple) ChildListAccessor::class else SingleChildAccessor::class
+                        val type = accessorSubclass.asClassName()
                             .parameterizedBy(
                                 data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType())
-                        val accessorName = (if (data.multiple) ChildListAccessor::class else  ChildAccessor::class).qualifiedName
+                        val accessorName = accessorSubclass.qualifiedName
                         addProperty(PropertySpec.builder(feature.validName, type)
                             .addModifiers(KModifier.OVERRIDE)
                             .initializer("""$accessorName(${ITypedNode::_node.name}, "${feature.originalName}", ${data.type.conceptObjectName()}, ${data.type.nodeWrapperInterfaceName()}::class)""")
@@ -265,7 +266,8 @@ class MetaModelGenerator(val outputDir: Path) {
                     }
                     is Child -> {
                         // TODO resolve link.type and ensure it exists
-                        val type = ChildListAccessor::class.asClassName()
+                        val accessorSubclass = if (data.multiple) ChildListAccessor::class else SingleChildAccessor::class
+                        val type = accessorSubclass.asClassName()
                             .parameterizedBy(
                                 data.type.parseConceptRef(concept.language).nodeWrapperInterfaceType())
                         addProperty(PropertySpec.builder(feature.validName, type)
