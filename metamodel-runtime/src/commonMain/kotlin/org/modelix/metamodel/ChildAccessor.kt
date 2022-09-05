@@ -6,10 +6,10 @@ import kotlin.reflect.KClass
 import kotlin.reflect.cast
 
 abstract class ChildAccessor<ChildT : ITypedNode>(
-    private val parent: INode,
-    private val role: String,
-    private val childConcept: IConcept,
-    private val childType: KClass<ChildT>,
+    protected val parent: INode,
+    protected val role: String,
+    protected val childConcept: IConcept,
+    protected val childType: KClass<ChildT>,
 ): Iterable<ChildT> {
     fun isEmpty(): Boolean = iterator().hasNext()
 
@@ -23,8 +23,8 @@ abstract class ChildAccessor<ChildT : ITypedNode>(
         }.iterator()
     }
 
-    fun addNew(index: Int = -1) {
-        parent.addNewChild(role, index, childConcept)
+    fun addNew(index: Int = -1, concept: IConcept? = null): ChildT {
+        return childType.cast(LanguageRegistry.wrapNode(parent.addNewChild(role, index, concept)))
     }
 
     fun remove(child: INode) {
