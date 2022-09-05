@@ -15,5 +15,4 @@
 
 package org.modelix.model.api
 
-interface IProperty : IRole {
-}
+interface IProperty : IRole

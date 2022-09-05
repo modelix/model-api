@@ -15,5 +15,4 @@
 
 package org.modelix.model.api
 
-interface IReferenceLink : ILink {
-}
+interface IReferenceLink : ILink
