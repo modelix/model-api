@@ -8,9 +8,9 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 @Serializable
-data class Language(
+data class LanguageData(
     val name: String,
-    val concepts: List<Concept>,
+    val concepts: List<ConceptData>,
 ) {
 
     fun toYaml(): String = Yaml.default.encodeToString(this)
@@ -19,7 +19,7 @@ data class Language(
 
     companion object {
         private val prettyJson = Json { prettyPrint = true }
-        fun fromFile(file: File): Language {
+        fun fromFile(file: File): LanguageData {
             return when (file.extension.lowercase()) {
                 "yaml" -> Yaml.default.decodeFromString(file.readText())
                 "json" -> Json.decodeFromString(file.readText())
@@ -30,40 +30,40 @@ data class Language(
 }
 
 @Serializable
-data class Concept(
+data class ConceptData(
     val name: String,
     val abstract: Boolean = false,
-    val properties: List<Property> = emptyList(),
-    val children: List<Child> = emptyList(),
-    val references: List<Reference> = emptyList(),
+    val properties: List<PropertyData> = emptyList(),
+    val children: List<ChildLinkData> = emptyList(),
+    val references: List<ReferenceLinkData> = emptyList(),
     val extends: List<String> = emptyList(),
 )
 
-interface IConceptFeature {
+interface IConceptFeatureData {
     val name: String
 }
 
 @Serializable
-data class Property (
+data class PropertyData (
     override val name: String,
     val type: PropertyType = PropertyType.STRING
-) : IConceptFeature
+) : IConceptFeatureData
 
 enum class PropertyType {
     STRING,
 }
 
 @Serializable
-data class Child(
+data class ChildLinkData(
     override val name: String,
     val type: String,
     val multiple: Boolean = false,
     val optional: Boolean = true,
-) : IConceptFeature
+) : IConceptFeatureData
 
 @Serializable
-data class Reference(
+data class ReferenceLinkData(
     override val name: String,
     val type: String,
     val optional: Boolean = true,
-) : IConceptFeature
+) : IConceptFeatureData

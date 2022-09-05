@@ -1,13 +1,13 @@
 package org.modelix.metamodel.generator
 
-fun newLanguage(name: String, body: LanguageBuilder.()->Unit): Language {
+fun newLanguage(name: String, body: LanguageBuilder.()->Unit): LanguageData {
     return LanguageBuilder(name).apply(body).build()
 }
 
 class LanguageBuilder(val name: String) {
-    private val concepts = ArrayList<Concept>()
-    fun build(): Language {
-        return Language(
+    private val concepts = ArrayList<ConceptData>()
+    fun build(): LanguageData {
+        return LanguageData(
             name = name,
             concepts = concepts
         )
@@ -20,9 +20,9 @@ class LanguageBuilder(val name: String) {
 
 class ConceptBuilder(val conceptName: String, val languageBuilder: LanguageBuilder) {
     private var abstract: Boolean = false
-    private val properties: MutableList<Property> = ArrayList()
-    private val children: MutableList<Child> = ArrayList()
-    private val references: MutableList<Reference> = ArrayList()
+    private val properties: MutableList<PropertyData> = ArrayList()
+    private val children: MutableList<ChildLinkData> = ArrayList()
+    private val references: MutableList<ReferenceLinkData> = ArrayList()
     private val extends: MutableList<String> = ArrayList()
 
     fun abstract(value: Boolean = true) {
@@ -30,11 +30,11 @@ class ConceptBuilder(val conceptName: String, val languageBuilder: LanguageBuild
     }
 
     fun property(name: String) {
-        properties.add(Property(name))
+        properties.add(PropertyData(name))
     }
 
     fun reference(name: String, type: String, optional: Boolean = false) {
-        references.add(Reference(name, type, optional))
+        references.add(ReferenceLinkData(name, type, optional))
     }
 
     fun optionalReference(name: String, type: String) {
@@ -42,7 +42,7 @@ class ConceptBuilder(val conceptName: String, val languageBuilder: LanguageBuild
     }
 
     fun child(name: String, type: String, optional: Boolean, multiple: Boolean) {
-        children.add(Child(name = name, type = type, multiple = multiple, optional = optional))
+        children.add(ChildLinkData(name = name, type = type, multiple = multiple, optional = optional))
     }
 
     fun child0n(name: String, type: String) = child(name = name, type = type, optional = true, multiple = true)
@@ -62,8 +62,8 @@ class ConceptBuilder(val conceptName: String, val languageBuilder: LanguageBuild
         }
     }
 
-    fun build(): Concept {
-        return Concept(
+    fun build(): ConceptData {
+        return ConceptData(
             name = conceptName,
             abstract = abstract,
             properties = properties,
