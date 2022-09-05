@@ -7,7 +7,9 @@ import org.modelix.model.api.*
 import java.nio.file.Path
 import kotlin.reflect.KClass
 
-private val reservedPropertyNames = setOf(IConcept::language.name)
+private val reservedPropertyNames: Set<String> = setOf(
+    "constructor", // already exists on JS objects
+) + IConcept::class.members.map { it.name }
 
 class MetaModelGenerator(val outputDir: Path) {
     private val languagesMap = HashMap<String, Language>()
