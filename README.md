@@ -1,3 +1,9 @@
+
+
+!!! This project is now part of https://github.com/modelix/modelix.core
+
+
+
 # model-api
 
 Modelix Model API, used by [Modelix](https://github.com/modelix/modelix) and Shadow Models (part
